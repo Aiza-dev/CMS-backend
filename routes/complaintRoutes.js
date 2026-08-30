@@ -4,11 +4,31 @@ const Complaint = require('../models/Complaint');
 const { verifyAuth } = require('../utils/authHelpers');
 
 // Generate unique ticket number CMP-YYYY-XXXX
+// const generateTicketNumber = async () => {
+//   const year = new Date().getFullYear();
+//   const count = await Complaint.countDocuments();
+//   const sequence = (count + 1).toString().padStart(4, '0');
+//   return `CMP-${year}-${sequence}`;
+// };
 const generateTicketNumber = async () => {
   const year = new Date().getFullYear();
-  const count = await Complaint.countDocuments();
-  const sequence = (count + 1).toString().padStart(4, '0');
-  return `CMP-${year}-${sequence}`;
+
+  const lastComplaint = await Complaint.findOne({
+    ticketNumber: { $regex: `^CMP-${year}-` }
+  }).sort({ ticketNumber: -1 });
+
+  let sequence = 1;
+
+  if (lastComplaint) {
+    const lastNumber = parseInt(
+      lastComplaint.ticketNumber.split('-')[2],
+      10
+    );
+
+    sequence = lastNumber + 1;
+  }
+
+  return `CMP-${year}-${sequence.toString().padStart(4, '0')}`;
 };
 
 // POST /api/complaints
